@@ -28,3 +28,10 @@ VALUES ('Luna', 'Cat', 2, 'available', 1);
 SELECT name, location FROM shelter;
 SELECT  name, type, status FROM pet;
 
+CREATE TABLE adopter (
+                         adopter_id SERIAL PRIMARY KEY,
+                         full_name VARCHAR(100) NOT NULL,
+                         phone VARCHAR(20),
+                         email VARCHAR(100),
+                         preferred_species VARCHAR(30)
+);

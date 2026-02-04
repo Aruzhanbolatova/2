@@ -1,59 +1,62 @@
-import java.util.List;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Statement;
 
 public class Main {
+
     public static void main(String[] args) {
-        Shelter shelter = new Shelter("Happy Paws");
 
-        // polymorphism: Animal reference, Dog/Cat objects
-        Animal dog1 = new Dog("Labrador");
-        Animal cat1 = new Cat(true);
+        Connection c = DatabaseConnection.getConnection();
+        if (c == null) return;
 
-        Pet p1 = new Pet(1, "Rocky", 3, dog1, true);
-        Pet p2 = new Pet(2, "Mimi", 1, cat1, true);
-        Pet p3 = new Pet(3, "Bobik", 5, new Dog("German Shepherd"), false);
+        try {
+            // WRITE (INSERT)
+            String insertSql = "INSERT INTO pet (name, type, age, status, shelter_id) VALUES (?, ?, ?, ?, ?)";
+            PreparedStatement insertPs = c.prepareStatement(insertSql);
+            insertPs.setString(1, "TestPet");
+            insertPs.setString(2, "Cat");
+            insertPs.setInt(3, 2);
+            insertPs.setString(4, "available");
+            insertPs.setInt(5, 1);
+            insertPs.executeUpdate();
+            insertPs.close();
 
-        shelter.addPet(p1);
-        shelter.addPet(p2);
-        shelter.addPet(p3);
+            // READ (SELECT)
+            Statement st = c.createStatement();
+            ResultSet rs = st.executeQuery("SELECT pet_id, name, type, age, status FROM pet ORDER BY pet_id");
 
-        Adopter a1 = new Adopter(101, "Aruzhan Bolatova", "+7 777 123 45 67");
+            while (rs.next()) {
+                System.out.println(
+                        rs.getInt("pet_id") + " " +
+                                rs.getString("name") + " " +
+                                rs.getString("type") + " " +
+                                rs.getInt("age") + " " +
+                                rs.getString("status")
+                );
+            }
 
-        System.out.println(shelter);
+            rs.close();
+            st.close();
 
-        System.out.println("\n--- Available pets ---");
-        List<Pet> available = shelter.filterAvailablePets();
-        for (Pet pet : available) {
-            System.out.println(pet);
+            // UPDATE
+            String updateSql = "UPDATE pet SET status = ? WHERE name = ?";
+            PreparedStatement updatePs = c.prepareStatement(updateSql);
+            updatePs.setString(1, "adopted");
+            updatePs.setString(2, "TestPet");
+            updatePs.executeUpdate();
+            updatePs.close();
+
+            // DELETE
+            String deleteSql = "DELETE FROM pet WHERE name = ?";
+            PreparedStatement deletePs = c.prepareStatement(deleteSql);
+            deletePs.setString(1, "TestPet");
+            deletePs.executeUpdate();
+            deletePs.close();
+
+            c.close();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-
-        System.out.println("\n--- Search pets by name 'mi' ---");
-        for (Pet pet : shelter.searchPetsByName("mi")) {
-            System.out.println(pet);
-        }
-
-        System.out.println("\n--- Filter by species 'Dog' ---");
-        for (Pet pet : shelter.filterBySpecies("Dog")) {
-            System.out.println(pet);
-        }
-
-        System.out.println("\n--- Sort by age ---");
-        for (Pet pet : shelter.sortByAgeAscending()) {
-            System.out.println(pet);
-        }
-
-        System.out.println("\n--- Adopt pet id=2 ---");
-        boolean adopted = shelter.adoptPet(2, a1);
-        System.out.println("Adopted? " + adopted);
-
-        System.out.println("\n--- Available pets after adoption ---");
-        for (Pet pet : shelter.filterAvailablePets()) {
-            System.out.println(pet);
-        }
-
-        // equals/hashCode demo
-        System.out.println("\n--- equals/hashCode demo ---");
-        Pet sameIdPet = new Pet(1, "OtherName", 10, new Cat(false), true);
-        System.out.println("p1 equals sameIdPet? " + p1.equals(sameIdPet));
-        System.out.println("p1 hash=" + p1.hashCode() + ", sameIdPet hash=" + sameIdPet.hashCode());
     }
 }
